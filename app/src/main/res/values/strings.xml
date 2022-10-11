@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Political Preparedness</string>
+    <string name="upcoming_elections">Upcoming Elections</string>
+    <string name="find_my_representatives">Find my representatives</string>
+    <string name="image_of_dropping_ballot">image of dropping ballot</string>
+    <string name="saved_elections">Saved Elections</string>
+    <string name="representative_search">Representative Search</string>
+    <string name="address_line_1_hint">Address Line 1</string>
+    <string name="address_line_2_hint">Address Line 2</string>
+    <string name="city_hint">City</string>
+    <string name="zip_hint">Zip</string>
+    <string name="use_my_location">Use My Location</string>
+    <string name="my_representatives_title">My Representatives</string>
+    <string name="the_www_link">The www link</string>
+    <string name="the_facebook_link">The facebook link</string>
+    <string name="the_twitter_link">The twitter link</string>
+    <string name="the_official_s_image">The Official\'s image</string>
+    <string name="election_information">Election Information</string>
+    <string name="corresponding_address">Corresponding Address</string>
+    <string name="voting_location">Voting Location</string>
+    <string name="ballot_information">Ballot Information</string>
+
+    <!-- TODO: Add necessary string values -->
+    <string name="permission_denied_explanation">You need to grant location permission in order to a lookup based on your the location.</string>
+    <string name="location_required_error">Location services must be enabled to use the app</string>
+    <string name="follow_label">FOLLOW</string>
+    <string name="unfollow_label">UNFOLLOW</string>
+    <string name="err_enter_line1">Please enter street line1</string>
+    <string name="err_enter_city">Please enter a city</string>
+    <string name="err_enter_state">Please enter a state</string>
+    <string name="err_enter_zip">Please enter a zip code</string>
+
+</resources>
