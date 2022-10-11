@@ -41,7 +41,7 @@ class VoterInfoFragment : Fragment() {
         if (division.state.isNotBlank() && division.country.isNotBlank()) {
             viewModel.fetchVoterInfo(electionId, "${division.state}, ${division.country}" )
             Log.i("VoterInfoFragment", "id = ${electionId}, state = ${division.state}")
-        } else if (electionId == 2000) {
+        } else if (electionId == 2000 || electionId == 8000) {
             viewModel.fetchVoterInfo(electionId, "ny, ${division.country}" )
         }
 

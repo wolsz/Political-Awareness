@@ -1,5 +1,6 @@
 package com.example.android.politicalpreparedness.repository
 
+import android.util.Log
 import com.example.android.politicalpreparedness.database.ElectionDao
 import com.example.android.politicalpreparedness.network.CivicsApi
 import com.example.android.politicalpreparedness.network.models.Election
@@ -26,6 +27,7 @@ class ElectionsRepository(private val database: ElectionDao) {
                 database.insertElections(electionResults.elections)
             } catch (exception: Exception) {
                 exception.printStackTrace()
+                Log.d("ElectionsRepository", "refreshElections: Cancelled here")
             }
 
         }

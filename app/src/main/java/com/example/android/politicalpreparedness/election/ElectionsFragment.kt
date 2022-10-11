@@ -16,10 +16,11 @@ import com.example.android.politicalpreparedness.election.adapter.ElectionListen
 class ElectionsFragment: Fragment() {
 
     private val viewModel : ElectionsViewModel by lazy {
-        val application = requireNotNull(this.activity).application
-        val viewModelFactory = ElectionsViewModelFactory(application)
-        ViewModelProvider(this, viewModelFactory).get(ElectionsViewModel::class.java)
+        ViewModelProvider(this).get(ElectionsViewModel::class.java)
     }
+
+    private var _binding: FragmentElectionBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var upcomingElectionListAdapter: ElectionListAdapter
     private lateinit var savedElectionListAdapter: ElectionListAdapter
@@ -29,7 +30,7 @@ class ElectionsFragment: Fragment() {
                               savedInstanceState: Bundle?): View {
         val binding = FragmentElectionBinding.inflate(inflater)
 
-        binding.lifecycleOwner = this
+        binding.lifecycleOwner = viewLifecycleOwner
 
         binding.viewModel = viewModel
 
@@ -55,7 +56,11 @@ class ElectionsFragment: Fragment() {
         viewModel.refreshFollowedElection()
 
         return binding.root
+    }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 }
