@@ -9,10 +9,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.navArgs
+import com.example.android.politicalpreparedness.databinding.FragmentElectionBinding
 import com.example.android.politicalpreparedness.databinding.FragmentVoterInfoBinding
 import kotlin.Exception
 
 class VoterInfoFragment : Fragment() {
+
+    private var _binding: FragmentVoterInfoBinding? = null
+    private val binding get() = _binding!!
 
     private val args: VoterInfoFragmentArgs by navArgs()
 
@@ -25,7 +29,7 @@ class VoterInfoFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
-        val binding = FragmentVoterInfoBinding.inflate(inflater)
+        _binding = FragmentVoterInfoBinding.inflate(inflater)
         binding.viewModel = viewModel
         binding.lifecycleOwner = this
 
@@ -56,6 +60,11 @@ class VoterInfoFragment : Fragment() {
 
         return binding.root
 
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 }

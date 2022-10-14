@@ -3,13 +3,11 @@ package com.example.android.politicalpreparedness.representative
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
-import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,12 +15,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.observe
 import com.example.android.politicalpreparedness.R
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
@@ -31,8 +28,7 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.maps.model.LatLng
-//import com.google.android.gms.location.R
+import com.google.android.gms.location.Priority
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
@@ -40,27 +36,37 @@ import java.util.*
 class RepresentativeFragment : Fragment() {
 
     companion object {
-        private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 100
         const val REQUEST_TURN_DEVICE_LOCATION_ON = 5
+        private val TAG = RepresentativeFragment::class.java.simpleName
     }
+
+    private var _binding: FragmentRepresentativeBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var layout: View
+
 
     private lateinit var representativeAdapter: RepresentativeListAdapter
 
     private val viewModel: RepresentativeViewModel by lazy {
-        ViewModelProvider(this).get(RepresentativeViewModel::class.java)
+        ViewModelProvider(this)[RepresentativeViewModel::class.java]
     }
 
-    private val TAG = RepresentativeFragment::class.java.simpleName
 
 
-    override fun onCreateView(inflater: LayoutInflater,
-                              container: ViewGroup?,
-                              savedInstanceState: Bundle?): View {
-        val binding = FragmentRepresentativeBinding.inflate(inflater)
 
-        binding.lifecycleOwner = this
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentRepresentativeBinding.inflate(inflater)
+
+        binding.lifecycleOwner = viewLifecycleOwner
 
         binding.viewModel = viewModel
+
+        layout = binding.constraintLayout!!
 
         binding.buttonSearch.setOnClickListener {
             hideKeyboard()
@@ -72,11 +78,6 @@ class RepresentativeFragment : Fragment() {
             getLocation()
         }
 
-        viewModel.showSnackBarInt.observe(viewLifecycleOwner, Observer {resId ->
-            Snackbar.make(this.requireView(), getString(resId), Snackbar.LENGTH_LONG).show()
-        })
-
-        //TODO: Define and assign Representative adapter
         representativeAdapter = RepresentativeListAdapter()
         binding.representativeList.adapter = representativeAdapter
 
@@ -84,67 +85,69 @@ class RepresentativeFragment : Fragment() {
         return binding.root
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
-
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                Toast.makeText(requireContext(), "Permission granted in Request Permission, moving on....", Toast.LENGTH_LONG).show()
-//                Log.d("onRequestPermissionsResult", "Permission granted in Request Permission, moving on....")
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.i("Permission: ", "Granted")
+                doToast("Permission granted as requested")
                 locationGranted()
             } else {
-                showDenialDialog()
-                Log.d("onRequestPermissionsResult", "Showing snackbar to request permission.")
+                doToast("Permission denied at this time")
+                Log.i("Permission: ", "Denied")
             }
-
         }
+
+    private fun doToast(message: String) {
+        Toast.makeText(
+            requireContext(),
+            message,
+            Toast.LENGTH_LONG
+        ).show()
     }
 
-    private fun checkLocationPermissions(permissionString: String, requestCode: Int) {
+    private fun onClickRequestPermission(view: View) {
         when {
-            ContextCompat.checkSelfPermission(requireContext(),
-                    permissionString) == PackageManager.PERMISSION_GRANTED -> {
-//                Log.d("checkLocationPermissions", "checkLocationPermissions: Permission granted in top check")
-                Toast.makeText(requireContext(), "Permission granted in Check Location Permission: Permission granted in top check", Toast.LENGTH_LONG).show()
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
                 locationGranted()
+
+                doToast("Permission already granted.")
+             }
+
+            shouldShowRequestPermissionRationale(
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) -> {
+                layout.showSnackBar(
+                    view,
+                    "Location access is required to access and display the representatives.",
+//                    getString(R.string.permission_required),
+                    Snackbar.LENGTH_INDEFINITE,
+                    "Ok"
+//                    getString(R.string.ok)
+                ) {
+                    requestPermissionLauncher.launch(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                }
             }
-            shouldShowRequestPermissionRationale(permissionString) -> showReasonDialog(permissionString, requestCode)
+
             else -> {
-                Log.d("checkLocationPermissions", "checkLocationPermissions: Requesting permission in ")
-                requestPermissions(arrayOf(permissionString), requestCode)}
+                requestPermissionLauncher.launch(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            }
         }
     }
+
 
     private fun locationGranted() {
         Log.d("locationGranted", "locationGranted: Yes granted... ")
         viewModel.setLocationEnabled()
-    }
-
-    private fun showReasonDialog(permissionString: String, requestCode: Int) {
-        val alertBuilder = AlertDialog.Builder(requireContext())
-
-        alertBuilder.apply {
-            setMessage(R.string.permission_denied_explanation)
-            setTitle("Permission required")
-            setPositiveButton("OK") { _: DialogInterface, _: Int ->
-                requestPermissions(arrayOf(permissionString), requestCode)
-            }
-        }
-        val dialog = alertBuilder.create()
-        dialog.show()
-    }
-
-    private fun showDenialDialog() {
-        val alertBuilder = AlertDialog.Builder(requireContext())
-
-        alertBuilder.apply {
-            setMessage(R.string.permission_denied_explanation)
-            setTitle("Location permission denied")
-            setPositiveButton("OK") { _: DialogInterface, _: Int ->  }
-        }
-        val dialog = alertBuilder.create()
-        dialog.show()
     }
 
 
@@ -153,30 +156,35 @@ class RepresentativeFragment : Fragment() {
 
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
         val locationResult = fusedLocationClient.lastLocation
-        locationResult.
-        addOnSuccessListener { location ->
+        locationResult.addOnSuccessListener { location ->
             if (location != null) {
                 Log.d("getLocation", "getLocation: $location")
                 val address = geoCodeLocation(location)
                 viewModel.getRepresentativesByLocation(address)
             }
         }
-                .addOnFailureListener { exception -> exception.printStackTrace() }
+            .addOnFailureListener { exception -> exception.printStackTrace() }
     }
 
     private fun geoCodeLocation(location: Location): Address {
         val geocoder = Geocoder(context, Locale.getDefault())
         return geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                .map { address ->
-                    Address("${address.subThoroughfare} ${address.thoroughfare}", "", address.locality?:address.subLocality, address.adminArea, address.postalCode)
-                }
-                .first()
+            .map { address ->
+                Address(
+                    "${address.subThoroughfare} ${address.thoroughfare}",
+                    "",
+                    address.locality ?: address.subLocality,
+                    address.adminArea,
+                    address.postalCode
+                )
+            }
+            .first()
     }
 
 
     private fun checkDeviceLocationSettings(resolve: Boolean = true) {
         val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_LOW_POWER
+            priority = Priority.PRIORITY_LOW_POWER
         }
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val settingsClient = LocationServices.getSettingsClient(requireContext())
@@ -184,21 +192,22 @@ class RepresentativeFragment : Fragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve) {
                 try {
-                    this.startIntentSenderForResult(
-                            exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON,
-                            null, 0, 0, 0, null
+                    ActivityCompat.startIntentSenderForResult(
+                        requireActivity(),
+                        exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null, 0, 0, 0, null
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(
-                            TAG,
-                            "checkDeviceLocationSettings: Error getting location settings resolution: " + sendEx.message
+                        TAG,
+                        "checkDeviceLocationSettings: Error getting location settings resolution: " + sendEx.message
                     )
                 }
             } else {
-                Log.i(TAG, "checkDeviceLocationSettings: Snackbar")
+                Log.i(TAG, "checkDeviceLocationSettings: Snack bar")
                 Snackbar.make(
-                        requireView(),
-                        R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
+                    requireView(),
+                    R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
                 ).setAction(android.R.string.ok) {
                     checkDeviceLocationSettings()
                 }.show()
@@ -206,7 +215,7 @@ class RepresentativeFragment : Fragment() {
         }
         locationSettingsResponseTask.addOnCompleteListener {
             if (it.isSuccessful) {
-                checkLocationPermissions(Manifest.permission.ACCESS_FINE_LOCATION, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+                onClickRequestPermission(requireView())
                 viewModel.setDeviceLocationOn()
                 Log.i(TAG, "checkLocationPermissions: Device location setting is on")
 
@@ -215,6 +224,8 @@ class RepresentativeFragment : Fragment() {
 
     }
 
+
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
             checkDeviceLocationSettings(false)
@@ -225,5 +236,28 @@ class RepresentativeFragment : Fragment() {
         val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(requireView().windowToken, 0)
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun View.showSnackBar(
+        view: View,
+        msg: String,
+        length: Int,
+        actionMessage: CharSequence?,
+        action: (View) -> Unit
+    ) {
+        val snackBar = Snackbar.make(view, msg, length)
+        if (actionMessage != null) {
+            snackBar.setAction(actionMessage) {
+                action(this)
+            }.show()
+        } else {
+            snackBar.show()
+        }
+    }
+
 
 }
