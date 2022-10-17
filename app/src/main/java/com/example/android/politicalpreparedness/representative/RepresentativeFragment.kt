@@ -23,7 +23,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.android.politicalpreparedness.R
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
+import com.example.android.politicalpreparedness.network.models.RepresentativeResponse
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
+import com.example.android.politicalpreparedness.util.NetworkResult
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -53,8 +55,6 @@ class RepresentativeFragment : Fragment() {
     }
 
 
-
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -66,11 +66,18 @@ class RepresentativeFragment : Fragment() {
 
         binding.viewModel = viewModel
 
+
+        viewModel.msg.observe(viewLifecycleOwner) { msg ->
+            if (!msg.isNullOrEmpty() )
+            { Snackbar.make(requireView().rootView, msg, Snackbar.LENGTH_SHORT).show()
+                viewModel.onShowMsgComplete() }
+        }
+
         layout = binding.constraintLayout!!
 
         binding.buttonSearch.setOnClickListener {
             hideKeyboard()
-            viewModel.getTheRepresentatives()
+            viewModel.validateAddress()
         }
 
         binding.buttonLocation.setOnClickListener {
@@ -78,11 +85,49 @@ class RepresentativeFragment : Fragment() {
             getLocation()
         }
 
+        viewModel.locationAddress.observe(viewLifecycleOwner) {
+            if (it.line1.isNotEmpty()) {
+                getTheReps()
+            }
+        }
+
+        viewModel.representativesResponse.observe(viewLifecycleOwner) { response ->
+            observeResponse(response)
+        }
+
         representativeAdapter = RepresentativeListAdapter()
         binding.representativeList.adapter = representativeAdapter
 
         checkDeviceLocationSettings()
         return binding.root
+    }
+
+    private fun observeResponse(response: NetworkResult<RepresentativeResponse>) {
+        when (response) {
+            is NetworkResult.Success -> {
+                Log.d("RepresentativeFragment", "getTheReps: Was successful")
+            }
+            is NetworkResult.Loading -> {
+                Log.d("RepresentativeFragment", "getTheReps: Loading now")
+                Toast.makeText(
+                    requireContext(),
+                    "Loading Representatives now",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            is NetworkResult.Error -> {
+                Log.d("RepresentativeFragment", "getTheReps: Encountered an error")
+                Toast.makeText(
+                    requireContext(),
+                    response.message.toString(),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun getTheReps() {
+        viewModel.getTheRepresentatives()
     }
 
 
@@ -115,8 +160,7 @@ class RepresentativeFragment : Fragment() {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
                 locationGranted()
-
-                doToast("Permission already granted.")
+//                doToast("Permission already granted.")
              }
 
             shouldShowRequestPermissionRationale(
@@ -127,8 +171,7 @@ class RepresentativeFragment : Fragment() {
                     "Location access is required to access and display the representatives.",
 //                    getString(R.string.permission_required),
                     Snackbar.LENGTH_INDEFINITE,
-                    "Ok"
-//                    getString(R.string.ok)
+                    getString(R.string.ok)
                 ) {
                     requestPermissionLauncher.launch(
                         Manifest.permission.ACCESS_FINE_LOCATION
@@ -160,7 +203,7 @@ class RepresentativeFragment : Fragment() {
             if (location != null) {
                 Log.d("getLocation", "getLocation: $location")
                 val address = geoCodeLocation(location)
-                viewModel.getRepresentativesByLocation(address)
+                viewModel.setAddress(address)
             }
         }
             .addOnFailureListener { exception -> exception.printStackTrace() }
@@ -258,6 +301,5 @@ class RepresentativeFragment : Fragment() {
             snackBar.show()
         }
     }
-
 
 }

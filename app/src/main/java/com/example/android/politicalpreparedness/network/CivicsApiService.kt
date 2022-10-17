@@ -9,6 +9,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Deferred
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
@@ -48,7 +49,10 @@ interface CivicsApiService {
     //TODO: Add representatives API Call
     @GET("representatives")
     suspend fun getRepresentativesResults(
-            @Query("address") address: String): RepresentativeResponse
+            @Query("address") address: String): Response<RepresentativeResponse>
+//    @GET("representatives")
+//    suspend fun getRepresentativesResults(
+//        @Query("address") address: String): RepresentativeResponse
 }
 
 object CivicsApi {
