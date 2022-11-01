@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlinx-serialization'
 apply plugin: "androidx.navigation.safeargs.kotlin"
+apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: 'kotlin-parcelize'
 
 android {
@@ -89,5 +90,12 @@ dependencies {
     implementation "androidx.activity:activity-ktx:$activity_version"
     implementation("androidx.fragment:fragment-ktx:$fragment_version")
 //    implementation "androidx.appcompat:appcompat:$appcompat_version"
+
+    // DataStore
+    implementation 'androidx.datastore:datastore-preferences:1.0.0'
+
+    //Dagger - Hilt
+    implementation 'com.google.dagger:hilt-android:2.43'
+    kapt 'com.google.dagger:hilt-android-compiler:2.43'
 
 }

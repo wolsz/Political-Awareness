@@ -20,11 +20,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.android.politicalpreparedness.R
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
 import com.example.android.politicalpreparedness.network.models.RepresentativeResponse
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
+import com.example.android.politicalpreparedness.util.NetworkListener
 import com.example.android.politicalpreparedness.util.NetworkResult
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
@@ -32,6 +34,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 import java.util.*
 
 
@@ -53,6 +56,8 @@ class RepresentativeFragment : Fragment() {
     private val viewModel: RepresentativeViewModel by lazy {
         ViewModelProvider(this)[RepresentativeViewModel::class.java]
     }
+
+    private lateinit var networkListener: NetworkListener
 
 
     override fun onCreateView(
@@ -97,6 +102,16 @@ class RepresentativeFragment : Fragment() {
 
         representativeAdapter = RepresentativeListAdapter()
         binding.representativeList.adapter = representativeAdapter
+
+        lifecycleScope.launch {
+            networkListener = NetworkListener()
+            networkListener.checkNetworkAvailable(requireContext())
+                .collect { status ->
+                    Log.d("RepresentativeFragment", "NetworkListener: ${status.toString()}")
+                    viewModel.networkStatus = status
+                    viewModel.showNetworkStatus()
+                }
+        }
 
         checkDeviceLocationSettings()
         return binding.root

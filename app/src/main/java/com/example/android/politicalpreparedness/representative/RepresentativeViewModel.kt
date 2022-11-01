@@ -6,6 +6,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.*
 import com.example.android.politicalpreparedness.R
 import com.example.android.politicalpreparedness.network.CivicsApi
@@ -20,8 +21,6 @@ import retrofit2.Response
 
 class RepresentativeViewModel(application: Application) : AndroidViewModel(application) {
 
-    //TODO: Establish live data for representatives and address
-
     val line1 = MutableLiveData("")
 
     val line2 = MutableLiveData("")
@@ -32,7 +31,7 @@ class RepresentativeViewModel(application: Application) : AndroidViewModel(appli
 
     val zip = MutableLiveData("")
 
-    val showSnackBarInt: SingleLiveEvent<Int> = SingleLiveEvent()
+    var networkStatus = false
 
     private val _deviceLocationOn = MutableLiveData(false)
     val deviceLocationOn: LiveData<Boolean>
@@ -144,6 +143,7 @@ class RepresentativeViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun hasInternetConnection(): Boolean {
+
         val connectivityManager = getApplication<Application>().getSystemService(
             Context.CONNECTIVITY_SERVICE
         ) as ConnectivityManager
@@ -194,4 +194,9 @@ class RepresentativeViewModel(application: Application) : AndroidViewModel(appli
         msg.value = ""
     }
 
+    fun showNetworkStatus() {
+        if(!networkStatus) {
+            Toast.makeText(getApplication(), "No Internet Connection.", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
